@@ -57,7 +57,7 @@ def is_valid_date_format(date_str):
         year, month, day = map(int, date_str.split('-'))
 
         # Check if the year is prior to 2023
-        if year >= 2023:
+        if year >= 2023 or year <= 1800:
             return False
 
         # Check if the month is between 1 and 12

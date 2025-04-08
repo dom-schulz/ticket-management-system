@@ -2,8 +2,69 @@
 
 A proof-of-concept ticket management system built with Python and Tkinter, demonstrating database operations and UI interactions. This project was created for the CPSC 321: Database Management Systems at Gonzaga University.
 
+## Application Overview
+
+Ticket Apprentice is an Python application developed as a proof-of-concept to demonstrate SQL database operations and connections 
+The application primarily serves as a demonstration of database concepts including:
+- SQL query construction and execution
+- Transaction management
+- Error handling
+- Data validation
+- Referential integrity
+- Dynamic UI generation based on database schema
+
+The application utilizes a tabbed interface with the following six tabs: 
+
+### 1. Admin Dashboard
+The Admin Dashboard tab provides basic analytics with SQL-generated reports:
+- Top 10 users with the most tickets purchased
+- Top 5 events generating the highest revenue
+- Top 10 users with highest spending
+
+These reports demonstrate various SQL queries using features like window functions, CTEs (Common Table Expressions), and aggregations.
+
+### 2. Add Entries
+This tab allows users to insert new records into the database across multiple tables:
+- Events
+- Users 
+- Individual Performers
+- Groups
+- Venues
+- Tickets
+- Memberships
+- Performance Lists
+
+Each form dynamically generates the appropriate fields based on the selected table and demonstrates proper validation and error handling for database insertions.
+
+### 3. Delete Entries
+The Delete tab provides functionality to remove records from any table in the database, with:
+- Record selection by ID (ie. primary key)
+- Confirmation dialogs to prevent accidental deletions
+- Enforcement of referential integrity
+
+### 4. Update Entries
+This tab allows modification of existing records with:
+- Dynamic form generation based on selected table
+- Pre-population of existing values
+- Validation before committing changes
+- Proper error handling
+
+### 5. Search Tickets
+The Search Tickets tab demonstrates complex query building with multiple filter criteria:
+- Price range filtering
+- Purchase status filtering
+- City-based filtering
+- Results displayed in a sortable treeview
+
+### 6. Search All
+This tab provides a comprehensive "generate all" function to see all entries in a table. 
+
+
 ## Demo Video
+**Note:** In the demo video, the tab labels are partially clipped off at the top of the application window. Additionally, there is a date validation error shown during record insertion that has since been fixed in the current version of the application.
+
 [![Ticket Apprentice Demo](https://img.youtube.com/vi/hr3miduw4tk/0.jpg)](https://www.youtube.com/watch?v=hr3miduw4tk)
+
 
 ## Database Schema
 The application is built around a database schema for managing events, tickets, users, and performances. The system connects to a MariaDB database for all data storage and retrieval operations. Below is the Entity-Relationship diagram that illustrates the database structure:
@@ -96,7 +157,8 @@ database = your_database
    - Migrate to a cloud-hosted solution (ex. Node.js)
    - Implement proper authentication and authorization
 
-3. User Interface
+3. User Interface and Login
+   - Include a log in for users and admins with different capabilities
    - Improve the user interfacea and navigation
    - Add responsive design for different screen sizes
 
