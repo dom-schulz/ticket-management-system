@@ -1,4 +1,4 @@
-# Ticket Apprentice - Database Management System (12/3/23 Update)
+# Ticket Apprentice - Ticket Management System (12/3/23 Update)
 
 A proof-of-concept ticket management system built with Python and Tkinter, demonstrating database operations and UI interactions. This project was created for the CPSC 321: Database Management Systems at Gonzaga University.
 
