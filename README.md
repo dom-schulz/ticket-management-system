@@ -64,6 +64,7 @@ This tab provides a comprehensive "generate all" function to see all entries in 
 **Note:** In the demo video, the tab labels are clipped off at the top of the application window. Additionally, there is a date validation error shown during record insertion that has since been fixed in the current version of the application. 
 
 Overall this demo video could be a little more polished but still displays the main functionality and design of the system:
+
 [![Ticket Apprentice Demo](https://img.youtube.com/vi/hr3miduw4tk/0.jpg)](https://www.youtube.com/watch?v=hr3miduw4tk)
 
 
