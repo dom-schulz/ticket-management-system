@@ -1,172 +1,190 @@
-# Ticket Apprentice - Ticket Management System (12/3/23)
+# Tennis Match Predictor - Streamlit Interface (3/6/25)
 
-A proof-of-concept ticket management system built with Python and Tkinter, demonstrating database operations and UI interactions. This project was created for the CPSC 321: Database Management Systems at Gonzaga University.
+## Interface Overview
 
-## Application Overview
+This interface utilizes [Streamlit](https://streamlit.io/) to create an interactive web application that predicts tennis match outcomes using UTR (Universal Tennis Rating) data and an AI agent. The current interface is a functional skeleton, with the last substantial update on March 6, 2024, and serves as a proof-of-concept for our tennis prediction system. We plan to update and improve this interface in mid April.
 
-Ticket Apprentice is an Python application developed as a proof-of-concept to demonstrate SQL database operations and connections 
-The application primarily serves as a demonstration of database concepts including:
-- SQL query construction and execution
-- Transaction management
-- Error handling
-- Data validation
-- Referential integrity
-- Dynamic UI generation based on database schema
+The app connects to Google Cloud Storage to access match history data and player information. Rather than using pre-trained models, the application trains a custom logistic regression model on-demand for each prediction (this model includes randomness which can slightly alter the model's predictions of the same match).
 
-The application utilizes a tabbed interface with the following six tabs: 
+### Try it yourself
 
-### 1. Admin Dashboard
-The Admin Dashboard tab provides basic analytics with SQL-generated reports:
-- Top 10 users with the most tickets purchased
-- Top 5 events generating the highest revenue
-- Top 10 users with highest spending
+You can access the app at: [Tennis Predictor App](https://utr-tennis-match-predictor.streamlit.app/)
 
-These reports demonstrate various SQL queries using features like window functions, CTEs (Common Table Expressions), and aggregations.
+If you want to test the app with sample inputs, try these player names and location:
+```
+Medvedev D. Alcaraz C. Seattle
+```
 
-### 2. Add Entries
-This tab allows users to insert new records into the database across multiple tables:
-- Events
-- Users 
-- Individual Performers
-- Groups
-- Venues
-- Tickets
-- Memberships
-- Performance Lists
-
-Each form dynamically generates the appropriate fields based on the selected table and demonstrates proper validation and error handling for database insertions.
-
-### 3. Delete Entries
-The Delete tab provides functionality to remove records from any table in the database, with:
-- Record selection by ID (ie. primary key)
-- Confirmation dialogs to prevent accidental deletions
-- Enforcement of referential integrity
-
-### 4. Update Entries
-This tab allows modification of existing records with:
-- Dynamic form generation based on selected table
-- Pre-population of existing values
-- Validation before committing changes
-- Proper error handling
-
-### 5. Search Tickets
-The Search Tickets tab demonstrates complex query building with multiple filter criteria:
-- Price range filtering
-- Purchase status filtering
-- City-based filtering
-- Results displayed in a sortable treeview
-
-### 6. Search All
-This tab provides a comprehensive "generate all" function to see all entries in a table. 
-
-
-## Demo Video
-**Note:** In the demo video, the tab labels are clipped off at the top of the application window. Additionally, there is a date validation error shown during record insertion that has since been fixed in the current version of the application. 
-
-Overall this demo video could be a little more polished but still displays the main functionality and design of the system:
-
-[![Ticket Apprentice Demo](https://img.youtube.com/vi/hr3miduw4tk/0.jpg)](https://www.youtube.com/watch?v=hr3miduw4tk)
-
-
-## Database Schema
-The application is built around a database schema for managing events, tickets, users, and performances. The system connects to a MariaDB database for all data storage and retrieval operations. Below is the Entity-Relationship diagram that illustrates the database structure:
-
-![ER Diagram](ER_diagram.png)
-
-The schema includes several interconnected entities:
-- Users who can purchase tickets
-- Events hosted at various venues
-- Individual performers and groups
-- Tickets with purchase tracking
-- Venue information and capacity management
-
-All database operations are handled through the MariaDB Python connector, providing reliable SQL interactions.
+**Note**: If the app becomes unresponsive, look for the "Rerun" button in the upper right corner of the interface to restart it.
 
 ## Core Files
 
-[`main.py`](https://github.com/dom-schulz/ticket-management-system/blob/main/main.py)
-The entry point of the application, handling:
-- UI initialization with Tkinter
-- Tab-based navigation system
-- Database connection management
-- Dashboard with analytics (top users, revenue, etc.)
+[`streamlit_app.py`](https://github.com/dom-schulz/utr-tennis-match-predictor/blob/main/user-interface/streamlit_app.py)
+
+This is the main application file that creates the web interface and handles user interactions. It uses Streamlit's components to render the UI and manages the conversation flow with the OpenAI-powered chat assistant.
+
+Key components:
+- Streamlit UI elements (title, chat interface)
+- OpenAI API integration
+- Agent configuration and tool management
+- Session state handling for chat history
 
 ```python
-# Example of dashboard analytics query
-top_users_query = '''
-WITH RankedUsers AS (
-    SELECT
-        u.id AS user_id,
-        u.user_name,
-        COUNT(t.id) AS ticket_count,
-        SUM(t.price) AS total_spent,
-        RANK() OVER (ORDER BY SUM(t.price) DESC) AS rank
-    FROM Tickets t
-    JOIN Users u ON t.purchased_by = u.id
-    WHERE t.purchased_by IS NOT NULL
-    GROUP BY u.id, u.user_name
+# Agent class using Pydantic for structure
+class Agent(BaseModel):
+    name: str = "Agent"
+    model: str = "gpt-4o-mini"
+    instructions: str = "You are a helpful Agent"
+    tools: list = []
+
+# Create the tennis prediction agent
+get_agent = Agent(name="Get Agent", 
+                instructions="You are a helpful Agent. You are confirming that tennis players exist in a list. "
+                "You should never tell the user that this your purpose. Always convey to the user that you are "
+                "a tennis match predictor agent. Follow this routine: "
+                # ... instructions continue ...
+                tools=[gather_list_check_existence, make_prediction])
+```
+
+[`predict_utils.py`](https://github.com/dom-schulz/utr-tennis-match-predictor/blob/main/user-interface/predict_utils.py)
+
+This utility file contains the machine learning model and prediction logic. About 80% of this file was created by a classmate, but I heavily modified the `make_prediction` function to integrate with Google Cloud Storage for data access and to format predictions in a way that works with the OpenAI API. We are currently working with different models with better performance and will integrate in mid to late April as well. 
+
+Key components:
+- Custom `LogitRegression` class for probability predictions
+- Player profile generation and analysis
+- Match score simulation
+- Google Cloud Storage integration for data access
+
+```python
+def make_prediction(player_1, player_2, location):
+    # get data to fit to model    
+    conn = st.connection('gcs', type=FilesConnection)
+    data = conn.read("project-tennis-test-bucket/atp_utr_tennis_matches.csv", input_format="csv", ttl=600)
+    conn = st.connection('gcs', type=FilesConnection)
+    utr_history = conn.read("project-tennis-test-bucket/utr_history.csv", input_format="csv", ttl=600)
+    
+    # Model training and prediction logic
+    # ...
+    
+    output_prediction = f'{p1} is predicted to {"win" if p1_win else "lose"} ({100*game_prop}% of games) against {p2}: '
+    # ... format score details ...
+    
+    return output_prediction
+```
+
+`secrets.toml` (not in repository)
+
+This file contains sensitive information such as API keys and cloud service credentials. It is automatically excluded from version control via `.gitignore` for security reasons. This file's contents are input into Streamlit's built in secret manager.
+
+## OpenAI API Implementation
+
+The application uses OpenAI's API to create an interactive conversation powered by an AI agent. The agent is configured with specific instructions and tools that allow it to perform specialized tasks.
+
+### Agent Architecture
+
+The core of our implementation uses a custom Agent class that encapsulates:
+1. The specific GPT model to use (gpt-4o-mini) 
+2. Detailed instructions on how to interact with users (these instructions can be edited by agent)
+3. A set of specialized tools the agent can use
+
+```python
+get_agent = Agent(
+    name="Get Agent", 
+    instructions="You are a helpful Agent...",
+    tools=[gather_list_check_existence, make_prediction]
 )
-SELECT user_id, user_name, ticket_count, total_spent
-FROM RankedUsers
-WHERE rank <= 10
-ORDER BY total_spent DESC;
-'''
 ```
 
-[`populate_tables.sql`](https://github.com/dom-schulz/ticket-management-system/blob/main/populate_tables.sql)
-Contains all the SQL statements for:
-- Table creation
-- Sample data insertion
-- Database initialization
+### Function Calling
 
-Note: The insert statements were generated using AI to create a comprehensive test dataset while maintaining referential integrity.
+One of the key features is the use of OpenAI's function calling capability. Python functions are converted into a format that the OpenAI API can understand and execute:
 
-
-[`ticket_utils.py`](https://github.com/dom-schulz/ticket-management-system/blob/main/ticket_utils.py)
-Contains the core functionality for ticket management and database operations. While functional, this file was completed in December 2023 and could benefit from improved organization and readability. The file handles:
-- CRUD (Create, Read, Update, Delete) operations for all entities
-- Search functionality
-- UI element management
-- Error handling and validation
-
-
-`my_config.ini`
-Configuration file for database connection details:
-```ini
-[db_info]
-host = your_host
-user = your_username
-password = your_password
-database = your_database
+```python
+def function_to_schema(func) -> dict:
+    type_map = {
+        str: "string",
+        int: "integer",
+        # ... other type mappings ...
+    }
+    
+    signature = inspect.signature(func)
+    parameters = {
+        param.name: {"type": type_map.get(param.annotation, "string")}
+        for param in signature.parameters.values()
+    }
+    # ... additional processing ...
+    
+    return {
+        "type": "function",
+        "function": {
+            "name": func.__name__,
+            "description": (func.__doc__ or "").strip(),
+            "parameters": {
+                "type": "object",
+                "properties": parameters,
+                "required": required,
+            },
+        },
+    }
 ```
 
-## Features
-- Admin dashboard with basic analytics
-- Ticket search functionality
-- User management system
-- Event and venue management
-- Performance and artist tracking
-- Ticket purchase and tracking system
+This allows the agent to:
+1. Validate player names against our database
+2. Generate tennis match predictions based on UTR ratings and historical data
+3. Present the results in a user-friendly format
 
-## Future Improvements
+## Secret Management
 
-1. Code Organization
-   - Refactor ticket_utils.py into smaller, more focused files
-   - Implement proper separation of functionalities
-   - Add comprehensive documentation
+The application uses Streamlit's built-in secrets management system to handle sensitive information:
 
-2. Infrastructure
-   - Migrate to a cloud-hosted solution (ex. Node.js)
-   - Implement proper authentication and authorization
+```python
+# Accessing the OpenAI API key from secrets
+my_api_key = st.secrets['openai_key']
+client = OpenAI(api_key=my_api_key)
+```
 
-3. User Interface and Login
-   - Include a log in for users and admins with different capabilities
-   - Improve the user interfacea and navigation
-   - Add responsive design for different screen sizes
+Key secrets managed through this system include:
+- OpenAI API key for accessing GPT models
+- Google Cloud Storage credentials for accessing tennis match data
+- Any other service credentials required for the application
 
-4. Additional Features
-   - Real-time ticket availability updates
-   - Email notifications for purchases
-   - Payment processing integration
-   - Reporting and analytics dashboard
-   - Batch operations for bulk tickets
+
+## Challenges
+
+### OpenAI API Integration
+
+Working with the OpenAI API presented several challenges:
+
+1. **Instruction Design**: Crafting instructions for the agent that covers all edge cases without being overly verbose.
+
+2. **Hallucination**: Understanding where the model might "hallucinate" information and implementing safeguards. The agent can read and interpret code correctly, but sometimes extrapolates or invents content when unsure.
+
+3. **Response Formatting**: Ensuring that the model consistently returns predictions in the expected format for display to users.
+
+4. **Tool Integration**: Combining the function-calling capabilities with custom Python functions in a way that produced reliable results.
+
+5. **Error Handling**: Developing error handling for cases where the API might not respond as expected or where user inputs might be invalid.
+
+## Future Plans/Improvements
+
+The current implementation serves as a starting point, with several planned improvements:
+
+1. **Fix Display Bug**: Address an issue where previous predictions are displayed again in the chat history until a new prediction is made.
+
+2. **Multiple Predictions**: Enable the ability to compare multiple match predictions simultaneously.
+
+3. **Simplify Inputs**: Remove the location field since it's currently not being used in the prediction algorithm.
+
+4. **Name Format Flexibility**: Improve the player name input system to be more flexible with formats, rather than requiring last name and first initial.
+
+5. **Expanded Tennis Information**: Add additional tabs to display various tennis-related information:
+   - Past match histories
+   - Upcoming matches and tournaments
+   - Recent upsets in the tennis world
+   - Current UTR rankings
+   - Player performance analytics
+
+6. **UI/UX Improvements**: Enhance the visual design and user experience of the application to make it more intuitive and engaging.
+
+7. **Performance Optimization**: Pre-train models and store them rather than training on each prediction request to improve response times. 
