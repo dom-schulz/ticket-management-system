@@ -130,7 +130,7 @@ Contains the core functionality for ticket management and database operations. W
 - Error handling and validation
 
 
-[my_config.ini](https://github.com/dom-schulz/ticket-management-system/blob/main/my_config.ini)
+[`my_config.ini`]
 Configuration file for database connection details:
 ```ini
 [db_info]
