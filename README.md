@@ -61,7 +61,7 @@ This tab provides a comprehensive "generate all" function to see all entries in 
 
 
 ## Demo Video
-**Note:** In the demo video, the tab labels are partially clipped off at the top of the application window. Additionally, there is a date validation error shown during record insertion that has since been fixed in the current version of the application.
+**Note:** In the demo video, the tab labels are clipped off at the top of the application window. Additionally, there is a date validation error shown during record insertion that has since been fixed in the current version of the application.
 
 [![Ticket Apprentice Demo](https://img.youtube.com/vi/hr3miduw4tk/0.jpg)](https://www.youtube.com/watch?v=hr3miduw4tk)
 
